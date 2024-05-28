@@ -1,0 +1,311 @@
+<!doctype html>
+
+<html>
+    <head>
+        <!-- Recommended meta tags -->
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <!-- PyScript CSS -->
+        <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css">
+        <!-- CSS for examples -->
+        <link rel="stylesheet" href="./assets/css/examples.css">
+
+        <!-- This script tag bootstraps PyScript -->
+        <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+
+        <!-- for splashscreen -->
+        <style>
+            #loading { outline: none; border: none; background: transparent }
+            .highlight { background-color: yellow; }
+            .tab-container { margin-top: 20px; }
+            .tab { display: inline-block; padding: 10px; background-color: #f0f0f0; border: 1px solid #ccc; cursor: pointer; }
+            .tab.active { background-color: #d0d0d0; }
+            .code-container { display: none; }
+            .code-container.active { display: block; }
+            pre { background-color: #f8f8f8; padding: 10px; border: 1px solid #ccc; 
+                text-align: left;}
+            
+        </style>
+        <script type="module">
+            const loading = document.getElementById('loading');
+            addEventListener('py:ready', () => loading.close());
+            loading.showModal();
+        </script>
+        <title>COCOA</title>
+        <link rel="icon" type="image/png" href="./assets/favicon.png">
+        <link rel="stylesheet" href="./assets/css/main.css">
+        <script src="./assets/js/drag.js" defer></script>
+        <script src="./assets/js/prism.js" defer></script>
+            <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css">
+
+    </head>
+
+    <body>
+        <dialog id="loading">
+            <h1>Loading...</h1>
+        </dialog>
+
+        <nav class="navbar" style="background-color: #000000">
+            <div class="app-header">
+
+                <a class="title" href="" style="color: #4CAF50">COCOA</a>
+            </div>
+        </nav>
+
+        <section class="pyscript">
+            <div class="container">
+                <h1 id="titles">Confidential Code Analysis</h1>
+                <h5>Upload your PHP code to detect vulnerabilities</h5>
+                <div class="options">
+                    <div style="display: flex; align-items: center; width: 300px;">
+                        <!-- Rounded switch -->
+                        <label for="run-cloud" style="margin-right: 5px;">Run in the cloud</label>
+    
+                        <label class="switch">
+                            <input type="checkbox" onchange="toggleDiv(this)" id="run-cloud">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+
+                    
+                    <div class="tw-toggle" >
+                        <input type="radio" name="toggle-vuln" value="false">
+                        <label class="toggle toggle-yes">XSS</label> 
+                        <input checked type="radio" name="toggle-vuln" value="-1">
+                        <label class="toggle toggle-yes">Both</label> 
+                        <input type="radio" name="toggle-vuln" value="true">
+                        <label class="toggle toggle-yes">SQLi</label>
+                        <span></span>  
+                    </div>
+                    <div class="tw-toggle" id="toggleDiv" style="visibility: hidden;">
+                        <input type="radio" name="toggle" value="false">
+                        <label class="toggle toggle-yes">Tokenized</label> 
+                        <input checked type="radio" name="toggle" value="-1">
+                        <label class="toggle toggle-yes">Private</label> 
+                        <input type="radio" name="toggle" value="true" disabled>
+                        <label class="toggle toggle-yes">Extra private</label>
+                        <span></span>  
+                    </div>
+                </div>
+                <script>
+                    toggleDiv(document.getElementById('run-cloud'));
+                    function toggleDiv(checkbox) {
+                        const toggleDiv = document.getElementById('toggleDiv');
+                        toggleDiv.style.visibility = checkbox.checked ? 'visible' : 'hidden';
+                    }
+                </script>
+                <div class="upload-container">
+                    
+                    <label for="file-input" class="file-label">Choose File</label>
+                    <input type="file" name="file-input" id="file-input" accept=".php">
+                    <div class="drop-area" id="dropArea">Drag and drop files here</div>
+                    <button id="upload-btn">Upload</button>
+                    
+                    <div id="file-display">
+                       
+                    </div>
+                    <div id="prev-next" style="visibility: hidden;">
+                        <button id="prev-btn" onclick="changeCodePath(-1)"><i class="fa fa-chevron-left"></i> Previous</button>
+                        <button id="next-btn" onclick="changeCodePath(1)">Next <i class="fa fa-chevron-right"></i></button>
+                    </div>
+                    <div id="code-display">
+
+                    </div>
+                </div>
+            </div>
+
+            
+            <script>
+                function changeCodePath(direction) {
+                    const codeContainers = document.getElementsByClassName('code-container');
+                    let activeIndex = -1;
+                    for (let i = 0; i < codeContainers.length; i++) {
+                        if (codeContainers[i].classList.contains('active')) {
+                            activeIndex = i;
+                            break;
+                        }
+                    }
+                    if (activeIndex !== -1) {
+                        codeContainers[activeIndex].classList.remove('active');
+                        let nextIndex = activeIndex + direction;
+                        if (nextIndex < 0) {
+                            nextIndex = codeContainers.length - 1;
+                        } else if (nextIndex >= codeContainers.length) {
+                            nextIndex = 0;
+                        }
+                        codeContainers[nextIndex].classList.add('active');
+                    }
+                }
+
+                function removeDuplicateLines(arr) {
+                    let dup = [];
+                    let lines = [];
+                    arr.forEach((token) => {
+                       if (!dup.includes(token[1])){
+                           lines.push(token);
+                           dup.push(token[1]);
+                       } 
+                    });
+                    return lines;
+                }
+                function highlightLines(fileContent, paths) {
+                    paths = JSON.parse(paths);
+                    const codeDisplay = document.getElementById('code-display');
+                    const linesArray = fileContent.split('\n');
+                    let codeContainers = [];
+                    document.getElementById('prev-next').style.visibility = 'visible';
+                    paths.forEach((path, pathIndex) => {
+                        // Create a container for the code of each path
+                        const codeContainer = document.createElement('div');
+                        codeContainer.className = 'code-container';
+                        if (pathIndex === 0 && codeDisplay.children.length == 0){ //code display must not have children yet
+                            codeContainer.classList.add('active');
+                        }
+                        path = removeDuplicateLines(path).reverse();
+                        path.forEach((line) => {
+                            const lineNumber = line[1];
+                            let highlightedContent = '<pre><code class="language-php">';
+                            //highlightedContent += `Vulnerability Path ${pathIndex + 1}\n\n`;
+                            for (let i = Math.max(lineNumber - 2, 0); i <= Math.min(lineNumber, linesArray.length - 1); i++) {
+                                const highlightClass = (i + 1 === lineNumber) ? 'highlight' : '';
+                                highlightedContent += `<div class="${highlightClass}">${i + 1}: ${linesArray[i]}</div>`;
+                            }
+                            highlightedContent += '</code></pre>';
+                            codeContainer.innerHTML += highlightedContent;
+                        });
+                        codeContainers.push(codeContainer);
+                    });
+
+                    for (let codeContainer of codeContainers) {
+                        codeDisplay.appendChild(codeContainer);
+                    }
+                    
+                }
+
+                function sendRequest(cip_code, fileContent){
+                    jsobj = {
+                        'index': cip_code.get('index'),
+                        'input_tok': cip_code.get('input_tok'),
+                        'sens_tok': cip_code.get('sens_tok'),
+                        'sans_tok': cip_code.get('sans_tok')
+                    };
+                    if (cip_code.has('det_key')) {
+                        jsobj['det_key'] = cip_code.get('det_key');
+                        jsobj['init'] = cip_code.get('init');
+                    }
+                    fetch("https://cocoa-vuln-b65xavemfq-nw.a.run.app", {
+                      method: "POST",
+                      body: JSON.stringify(jsobj),
+                      headers: {
+                        "Content-type": "application/json; charset=UTF-8"
+                      }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Success:', data);
+                        if (data.results) {
+                            highlightLines(fileContent, JSON.stringify(data.results));
+                        }
+                    })
+                    .catch((error) => {
+                        console.error('Error:', error);
+                    });
+                }
+            </script>
+
+            <script type="py" config="./pyscript.toml">
+                from pyscript import when, display
+                from js import document
+                import analyse
+                from js import sendRequest, highlightLines
+                from pyodide.ffi import create_proxy
+                from vulnDetector import *
+                from ds import *
+                from cripto import *
+                import json
+                import secrets
+                def generate_random_aes_key(key_size=32):
+                    if not isinstance(key_size, int) or key_size <= 0:
+                        raise ValueError("key_size must be a positive integer")
+                    if key_size % 4 != 0:
+                        raise ValueError("key_size must be a multiple of 4")
+                    random_bytes = secrets.token_bytes(key_size)
+                    return random_bytes.hex()
+                def prepare_data(data):
+                    for k in data.data:
+                        if k == "BASE_DEPTH":
+                            continue
+                        for i,v in enumerate(data.data[k]):
+                            if type(data.data[k][i]) == bytes:
+                                data.data[k][i] = data.data[k][i].hex()
+                                continue    
+                            if type(data.data[k][i]) == MyValue or type(data.data[k][i]) == MyEncryptedValue:
+                                data.data[k][i] = data.data[k][i]._serialize()
+                    
+
+                @when('change', '#file-input')
+                async def processFile(event):
+                    fileList = event.target.files.to_py()
+                    for f in fileList:
+                        data = await f.text()
+                        #print number of lines
+                        try:
+                            #check if private or tokenized
+                            mode = document.querySelector('input[name="toggle"]:checked').value
+                            cloud_run = document.getElementById('run-cloud').checked
+                            if mode == 'true':
+                                flag = cloud_run
+                            elif mode == 'false':
+                                flag = False
+                            else:
+                                flag = cloud_run
+                            Kd_key = generate_random_aes_key()
+                            Kr_key = generate_random_aes_key()
+                            mode = document.querySelector('input[name="toggle-vuln"]:checked').value
+                            inputs = []
+                            if mode == 'false':
+                                inputs = [("INPUT","XSS_SENS","XSS_SANS")]
+                            elif mode == 'true':
+                                inputs = [("INPUT","SQLi_SENS","SQLi_SANS")]
+                            else:
+                                inputs = [("INPUT","XSS_SENS","XSS_SANS")] + [("INPUT","SQLi_SENS","SQLi_SANS")]
+
+                            if flag:
+                                index = analyse.create_index(data, Kd_key, Kr_key)
+                            else:
+                                index = analyse.create_index(data)
+                            if cloud_run:
+                                prepare_data(index)
+                            
+                           
+                            if not document.getElementById('run-cloud').checked: 
+                                for input, sens, sans in inputs:
+                                    myobj = {'index': json.dumps(index.data) if cloud_run else index,
+                                    'input_tok': input if not flag else encrypt(Kd_key, input),
+                                       'sens_tok': sens if not flag else encrypt(Kd_key, sens),
+                                       'sans_tok': sans if not flag else encrypt(Kd_key, sans),
+                                    }
+                                    if document.getElementById('run-cloud').checked and flag:
+                                        myobj['init'] = encrypt(Kr_key, sens)
+                                        myobj['det_key'] = Kd_key 
+                                    vd = VulnerabilityDetector(myobj['index'], Kd_key)
+                                    
+                                    results = vd.detection(myobj['input_tok'], myobj['sens_tok'], myobj['sans_tok'], myobj['init'] if 'init' in myobj else None)
+                                    highlightLines(str(data), str(json.dumps(results))) 
+                            else:
+                                for input, sens, sans in inputs:
+                                    myobj = {'index': json.dumps(index.data) if cloud_run else index,
+                                    'input_tok': input if not flag else encrypt(Kd_key, input),
+                                       'sens_tok': sens if not flag else encrypt(Kd_key, sens),
+                                       'sans_tok': sans if not flag else encrypt(Kd_key, sans),
+                                    }
+                                    if document.getElementById('run-cloud').checked and flag:
+                                        myobj['init'] = encrypt(Kr_key, sens)
+                                        myobj['det_key'] = Kd_key 
+                                    sendRequest(create_proxy(myobj), data)
+                        except Exception as e:
+                            display(e)
+            </script>
+        </section>
+    </body>
+</html>

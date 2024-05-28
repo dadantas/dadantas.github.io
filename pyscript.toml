@@ -1,0 +1,14 @@
+name = "PyScript Jokes Copy Copy"
+description = "A simple application showing how to install and use a package in PyScript."
+packages = [ "pyjokes", "pyyaml", "pycryptodome",]
+[[fetch]]
+files = [ "analyse.py", ]
+from = "./analysis"
+
+[[fetch]]
+files = [ "config.yaml", "tokens.py", "preprocessor.py", "cripto.py", "vulnDetector.py","storageWorker.py", "translator.py", "ds.py", "lexer.py",]
+from = "https://raw.githubusercontent.com/David28/CoCoA-ORE/main/Code/"
+
+[files]
+"./analysis/lib/ore_wrapper.py" = "./lib/ore_wrapper.py"
+"https://raw.githubusercontent.com/dabeaz/ply/master/src/ply/lex.py" = "./ply/lex.py"
