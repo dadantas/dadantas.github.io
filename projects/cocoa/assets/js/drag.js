@@ -42,12 +42,19 @@ const dropArea = document.getElementById('dropArea');
         });
 
         function handleFiles(files) {
-            fileDisplay.innerHTML = '';
+            let text = '';
             [...files].forEach(file => {
-                const fileInfo = document.createElement('div');
-                fileInfo.textContent = `${file.name} (${formatBytes(file.size)})`;
-                fileDisplay.appendChild(fileInfo);
+                text = `${file.name} (${formatBytes(file.size)})`;
             });
+            // emit event with the files and the text
+            const event = new CustomEvent('fileAdded', {
+                detail: {
+                    files,
+                    text
+                }
+            });
+            //emit ebent on fileDisplay
+            document.getElementById('code-display').dispatchEvent(event)
         }
 
         function formatBytes(bytes, decimals = 2) {

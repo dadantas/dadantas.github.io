@@ -75,9 +75,7 @@ h5 {
     background-color: #f0fff0;
 }
 
-#file-display {
-    margin-top: 20px;
-}.tw-toggle {
+.tw-toggle {
     /* background: #95A5A6; */
     display: flex;
     align-items: center;

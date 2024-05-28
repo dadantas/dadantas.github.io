@@ -101,12 +101,10 @@
                     <div class="drop-area" id="dropArea">Drag and drop files here</div>
                     <button id="upload-btn">Upload</button>
                     
-                    <div id="file-display">
-                       
-                    </div>
-                    <div id="prev-next" style="visibility: hidden;">
-                        <button id="prev-btn" onclick="changeCodePath(-1)"><i class="fa fa-chevron-left"></i> Previous</button>
-                        <button id="next-btn" onclick="changeCodePath(1)">Next <i class="fa fa-chevron-right"></i></button>
+                    <div id="prev-next" style="visibility: hidden; margin-top: 20px;">
+                        <button id="prev-btn" onclick="changeCodePath(-1)"><i class="fa fa-chevron-left"></i></button>
+                        <span id="vuln-selected"></span><span id="vuln-total"></span>
+                        <button id="next-btn" onclick="changeCodePath(1)"><i class="fa fa-chevron-right"></i></button>
                     </div>
                     <div id="code-display">
 
@@ -135,6 +133,8 @@
                         }
                         codeContainers[nextIndex].classList.add('active');
                     }
+                    document.getElementById('vuln-selected').innerText = `${activeIndex + 1}`;
+                    document.getElementById('vuln-total').innerText = `/${codeContainers.length}`;
                 }
 
                 function removeDuplicateLines(arr) {
@@ -148,7 +148,7 @@
                     });
                     return lines;
                 }
-                function highlightLines(fileContent, paths) {
+                function highlightLines(fileContent, paths, filename) {
                     paths = JSON.parse(paths);
                     const codeDisplay = document.getElementById('code-display');
                     const linesArray = fileContent.split('\n');
@@ -162,6 +162,7 @@
                             codeContainer.classList.add('active');
                         }
                         path = removeDuplicateLines(path).reverse();
+                        codeContainer.innerHTML += '<div class="file-name">'+filename+'</div>';
                         path.forEach((line) => {
                             const lineNumber = line[1];
                             let highlightedContent = '<pre><code class="language-php">';
@@ -176,13 +177,17 @@
                         codeContainers.push(codeContainer);
                     });
 
+                    if (codeContainers.length > 0) {
+                        document.getElementById('vuln-selected').innerText = `1`;
+                    }
                     for (let codeContainer of codeContainers) {
                         codeDisplay.appendChild(codeContainer);
                     }
+                    document.getElementById('vuln-total').innerText = `/${codeDisplay.children.length}`;
                     
                 }
 
-                function sendRequest(cip_code, fileContent){
+                function sendRequest(cip_code, fileContent, filename){
                     jsobj = {
                         'index': cip_code.get('index'),
                         'input_tok': cip_code.get('input_tok'),
@@ -204,7 +209,7 @@
                     .then(data => {
                         console.log('Success:', data);
                         if (data.results) {
-                            highlightLines(fileContent, JSON.stringify(data.results));
+                            highlightLines(fileContent, JSON.stringify(data.results), filename);
                         }
                     })
                     .catch((error) => {
@@ -224,6 +229,8 @@
                 from cripto import *
                 import json
                 import secrets
+
+                analysed = []
                 def generate_random_aes_key(key_size=32):
                     if not isinstance(key_size, int) or key_size <= 0:
                         raise ValueError("key_size must be a positive integer")
@@ -242,11 +249,16 @@
                             if type(data.data[k][i]) == MyValue or type(data.data[k][i]) == MyEncryptedValue:
                                 data.data[k][i] = data.data[k][i]._serialize()
                     
-
-                @when('change', '#file-input')
-                async def processFile(event):
-                    fileList = event.target.files.to_py()
+                @when('fileAdded', '#code-display')
+                async def handle_fileAdded(event):
+                    await handle_analysis(event.detail.files, event.detail.text)
+                
+                
+                async def handle_analysis(fileList, filename):
                     for f in fileList:
+                        if filename in analysed:
+                            continue
+                        analysed.append(filename)
                         data = await f.text()
                         #print number of lines
                         try:
@@ -277,13 +289,13 @@
                             if cloud_run:
                                 prepare_data(index)
                             
-                           
+                        
                             if not document.getElementById('run-cloud').checked: 
                                 for input, sens, sans in inputs:
                                     myobj = {'index': json.dumps(index.data) if cloud_run else index,
                                     'input_tok': input if not flag else encrypt(Kd_key, input),
-                                       'sens_tok': sens if not flag else encrypt(Kd_key, sens),
-                                       'sans_tok': sans if not flag else encrypt(Kd_key, sans),
+                                    'sens_tok': sens if not flag else encrypt(Kd_key, sens),
+                                    'sans_tok': sans if not flag else encrypt(Kd_key, sans),
                                     }
                                     if document.getElementById('run-cloud').checked and flag:
                                         myobj['init'] = encrypt(Kr_key, sens)
@@ -291,18 +303,18 @@
                                     vd = VulnerabilityDetector(myobj['index'], Kd_key)
                                     
                                     results = vd.detection(myobj['input_tok'], myobj['sens_tok'], myobj['sans_tok'], myobj['init'] if 'init' in myobj else None)
-                                    highlightLines(str(data), str(json.dumps(results))) 
+                                    highlightLines(str(data), str(json.dumps(results)), str(filename)) 
                             else:
                                 for input, sens, sans in inputs:
                                     myobj = {'index': json.dumps(index.data) if cloud_run else index,
                                     'input_tok': input if not flag else encrypt(Kd_key, input),
-                                       'sens_tok': sens if not flag else encrypt(Kd_key, sens),
-                                       'sans_tok': sans if not flag else encrypt(Kd_key, sans),
+                                    'sens_tok': sens if not flag else encrypt(Kd_key, sens),
+                                    'sans_tok': sans if not flag else encrypt(Kd_key, sans),
                                     }
                                     if document.getElementById('run-cloud').checked and flag:
                                         myobj['init'] = encrypt(Kr_key, sens)
                                         myobj['det_key'] = Kd_key 
-                                    sendRequest(create_proxy(myobj), data)
+                                    sendRequest(create_proxy(myobj), data, str(filename))
                         except Exception as e:
                             display(e)
             </script>
