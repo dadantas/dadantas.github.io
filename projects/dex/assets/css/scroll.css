@@ -93,6 +93,9 @@
 .copy-button:active > svg {
     transform: translateY(2px);
 }
+.copy-button:hover:not(:disabled) {
+  background: none;
+}
 
 .copy-image {
   cursor: pointer;

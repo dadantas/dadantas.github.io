@@ -82,10 +82,14 @@
             <h1>Ask for Loan</h1>
             <form id="ask-for-loan-form">
               <!-- can be with dex or nft -->
-              <select name="loan-type" id="loan-type" >
-                <option value="DEX">DEX</option>
-                <option value="NFT">NFT</option>
-              </select>
+              <div style="display: flex; align-items: baseline;">
+                <label for="loan-type">Loan Type: </label>
+                <select name="loan-type" id="loan-type" >
+                  <option value="DEX">DEX</option>
+                  <option value="NFT">NFT</option>
+                </select>
+              </div>
+              
               <input type="number" id="nft-loan-id" placeholder="Input nft id" >
               <div style="display: flex; align-items: baseline;">
                 <label for="loan-amount">Amount: </label>

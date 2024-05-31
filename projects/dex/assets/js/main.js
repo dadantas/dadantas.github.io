@@ -103,9 +103,8 @@ async function getLoans() {
     checkLoans();
   }
 }
-
 async function listenToLoanCreation() {
-  await defi_contract.events.loanCreated({}, async (error, event) => {
+  defi_contract.events.loanCreated({}, async (error, event) => {
     if (error) {
       console.error("Error listening to loan creation:", error);
     } else {
@@ -115,11 +114,9 @@ async function listenToLoanCreation() {
       loans.push(newLoan);
       console.log("New loan created:", newLoan);
       await updateLoanCard(newLoan, newId);
-      //find the new badge and make it visible
-      document.getElementById("nft-" + newId + "-badge").style.visibility =
-        "visible";
+      // find the new badge and make it visible
+      document.getElementById("nft-" + newId + "-badge").style.visibility = "visible";
     }
-    listenToLoanCreation();
   });
 }
 
