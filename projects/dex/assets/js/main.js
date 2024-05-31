@@ -233,14 +233,11 @@ async function checkLoans() {
   //check the mapping
   await Promise.all(
     loans.map(async (loan, i) => {
-      console.log("Checking loan:", loan);
-      try {
-        await defi_contract.methods.checkLoan(loan.id).send({
-          from: accounts[selectedWallet],
-        });
-      } catch (error) {
-        // Handle error
-      }
+      defi_contract.methods.checkLoan(loan.id).send({
+        from: accounts[selectedWallet],
+      }).then((result) => {
+        console.log("Loan checked:", result);
+      });
 
       newLoans.push(loan); //still unpaid
       let payment = await defi_contract.methods.payments(loan.id).call();
