@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Decentralized Finance</title>
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.9.0/dist/web3.min.js"></script>
+  <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+  <script type="stylesheet" src="./assets/"></script>
+  <link rel="stylesheet" href="/assets/css/styles.css">
+  <link rel="stylesheet" href="/assets/css/scroll.css">
+  <script defer src="/assets/js/main.js" type="module"></script>
+  <script> src="/assets/js/scroll.js"  </script>
+</head>
+
+<body >
+  <div class="main-container">
+    <div class="container">
+      <h1>Decentralized Finance</h1>
+      <div>
+        <button onclick="connectMetaMask()">Connect to MetaMask</button>
+        <select name="wallet-select" id="wallet-select" >
+  
+        </select>
+        <span id="wallet-balance"></span>
+      </div>
+      <div id="owner-section" class="section" style="display: none;">
+        <h2>Owner Actions</h2>
+        <button onclick="openDialog('SET_RATE')">Set Exchange Rate</button>
+        <button onclick="checkLoans()">Check Loans</button>
+      </div>
+  
+      <div id="user-section" class="section">
+        <h2>User Actions</h2>
+          <button onclick="openDialog('BUY_DEX')">Buy DEX Tokens</button>
+          <button onclick="openDialog('SELL_DEX')">Sell DEX Tokens</button>
+
+        <dialog id="greyDialog">
+          <!--              SET RATE                -->
+          <dialog id="set-rate-dialog">
+            <h1>Set Exchange Rate</h1>
+            <form id="set-rate-form">
+              <label for="exchange-rate">Exchange Rate: </label>
+              <input type="number" id="exchange-rate" >
+            </form>
+            <button onclick="setRateEthToDex()" style="float: inline-end;">Set Exchange Rate</button>
+          </dialog>
+         
+          <!--              BUY DEX                 -->
+          <dialog id="buy-dex-dialog">
+            <h1>Buy DEX Tokens</h1>
+            <form id="buy-dex-form">
+              <div style="display: flex; align-items: baseline;">
+                <label for="dex-buy-amount">Amount: </label>
+                <input type="number" id="dex-buy-amount" >
+                <select name="dex-buy-unit" id="dex-buy-unit">
+                <option value="Wei">Wei</option>
+                <option value="DEX">DEX</option>
+                <option value="ETH">ETH</option>
+              </select>
+              </div>
+            </select>
+            </form>
+            <button onclick="buyDex()" style="float: inline-end;">Buy DEX Tokens</button>
+          </dialog>
+
+          <!--              SELL DEX                 -->
+          <dialog id="sell-dex-dialog">
+            <h1>Sell DEX Tokens</h1>
+            <form id="sell-dex-form">
+              <div style="display: flex; align-items: baseline;">
+                <label for="dex-sell-amount">Amount: </label>
+                <input type="number" id="dex-sell-amount" >
+              </div>
+            </select>
+            </form>
+            <button onclick="sellDex()" style="float: inline-end;">Sell DEX Tokens</button>
+          </dialog>
+
+          <!--              LOAN                 -->
+          <dialog id="loan-dialog">
+            <h1>Ask for Loan</h1>
+            <form id="ask-for-loan-form">
+              <!-- can be with dex or nft -->
+              <select name="loan-type" id="loan-type" >
+                <option value="DEX">DEX</option>
+                <option value="NFT">NFT</option>
+              </select>
+              <input type="number" id="nft-loan-id" placeholder="Input nft id" >
+              <div style="display: flex; align-items: baseline;">
+                <label for="loan-amount">Amount: </label>
+                <input type="number" id="loan-amount" >
+                <span id="loan-request-unit"></span>
+                
+              </div>
+              <div style="display: flex; align-items: baseline;">
+                <label for="loan-deadline">Deadline: </label>
+                <input type="number" id="loan-deadline" >
+                <select name="loan-deadline-unit" id="loan-deadline-unit">
+                  <option value="Seconds">Seconds</option>
+                  <option value="Minutes">Minutes</option>
+                  <option value="Hours">Hours</option>
+                  <option value="Days">Days</option>
+                </select>
+              </div>
+            </form>
+          <button onclick="{
+            if (document.getElementById('loan-type').value === 'NFT') {
+              window.makeLoanRequestByNft();
+            } else {
+              window.loan();
+            }
+          }" style="float: inline-end;" id="confirm-loan">Ask for Loan</button>
+          </dialog>
+          <script>
+            
+
+            function updateUnits() {
+              if (this.value === 'NFT') {
+                document.getElementById('nft-loan-id').style.display = 'block';
+                document.getElementById('loan-request-unit').innerText = 'Wei';
+                document.getElementById('confirm-loan').removeEventListener('click', window.loan);
+                document.getElementById('confirm-loan').addEventListener('click', window.makeLoanRequestByNft);
+              } else {
+                document.getElementById('nft-loan-id').style.display = 'none';
+                document.getElementById('loan-request-unit').innerText = 'DEX';
+                document.getElementById('confirm-loan').removeEventListener('click', window.makeLoanRequestByNft);
+                document.getElementById('confirm-loan').addEventListener('click', window.loan);
+              }
+            }
+             document.getElementById('loan-type').addEventListener('change', function() {
+              updateUnits.call(this);
+            });
+            updateUnits.call(document.getElementById('loan-type'));
+          </script>
+
+          <!--              RETURN LOAN                 -->
+          <dialog id="return-loan-dialog">
+            <h1>Return loan</h1>
+            <form id="return-loan-form">
+              <input type="number" id="return-loan-id" placeholder="Input loan id" >
+              <div style="display: flex; align-items: baseline;">
+                <label for="return-loan-amount">Amount: </label>
+                <input type="number" id="return-loan-amount" placeholder="Input amount in Wei">
+              </div>
+            </select>
+            </form>
+            <button onclick="returnLoan()" style="float: inline-end;">Return Loan</button>
+          </dialog>
+
+          <!--              CANCEL LOAN                 -->
+          <dialog id="cancel-loan-dialog">
+            <h1>Cancel Loan Request</h1>
+            <form id="cancel-loan-form">
+              <input type="number" id="cancel-loan-nft-id" placeholder="Input nft id" >
+            </form>
+            <button onclick="cancelLoanRequestByNft()" style="float: inline-end;">Cancel Loan Request</button>
+          </dialog>
+
+        </dialog>
+        
+
+
+        <p>Your DEX Tokens: <span id="total-tokens"></span></p>
+        <button onclick="openDialog('LOAN')">Ask for Loan</button>
+        <button onclick="openDialog('CANCEL_LOAN')">Cancel Loan Request</button>
+        <button onclick="openDialog('RETURN_LOAN')">Return ETH</button>
+        <p>Total ETH in Contract: <span id="total-eth"></span></p>
+        <p>Exchange Rate: 1 DEX = <span id="exchange-rate-display"></span> wei</p>
+        <h3>Available NFTs</h3>
+        <ul id="nft-list"></ul>
+        <p>Total Borrowed ETH: <span id="total-borrowed-eth">0</span> Wei</p>
+        <p>Total paid back ETH: <span id="total-paidback-eth">0</span> Wei</p>
+        <div class="w3-border">
+          <div class="w3-green" id="paid-back-bar" style="height:24px;width:0%"></div>
+        </div>
+        <button onclick="clearExpiredLoans()">Clear Expired</button>
+      </div>
+
+
+      
+    </div>
+    <div class="container">
+      <h1>Lendable NFT loans</h1>
+      <section class="section-container">
+        <div class="nft-list-container">
+          <div class="nft-list" id="nftList">
+            <!-- Available to loan nft loans here -->
+            
+          </div>
+        </div>
+        <div id="scrollRight" class="scroll-icon">
+      <i class="fas fa-arrow-right"></i>
+    </div>
+    </div>
+      </section>
+      <div class="container">
+        <h1>All loans</h1>
+        <h5>Total Unpaid: <span id="unpaid-total">0</span> Wei</h5>
+        <section class="section-container">
+          <div class="nft-list-container">
+            <div class="nft-list" id="allLoans">
+              <!-- All loans here -->
+            </div>
+          </div>
+          <div id="scrollRight" class="scroll-icon">
+        <i class="fas fa-arrow-right"></i>
+      </div>
+      </div>
+        </section>
+        
+      </div>
+    </div>
+    
+    
+  </div>
+  <footer style="float: inline-end;">
+    <p>Running on the Sepolia test network.</p>
+  </footer>
+<!-- footer to warn that it is running on sepolia test network -->
+
+</body>
+
+</html>

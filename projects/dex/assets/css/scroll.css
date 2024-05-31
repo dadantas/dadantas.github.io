@@ -1,0 +1,103 @@
+/* styles.css */
+  .section-container {
+    margin: auto;
+    padding: 20px;
+    display: flex;
+    align-items: center; /* Align the scroll icon vertically */
+  }
+  
+  .nft-list-container {
+    position: relative;
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: thin;
+    scrollbar-color: #333 #ccc;
+  }
+  
+  .nft-list {
+    display: flex;
+    flex-direction: row;
+  }
+  
+  .nft-card {
+    position: relative;
+    flex: 0 0 auto;
+    margin: 15px;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+  }
+  
+  .new-badge {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    background-color: #FF5733;
+    color: white;
+    padding: 5px;
+    border-radius: 3px;
+    font-size: 0.8em;
+  }
+  
+  .nft-card img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  /* Style scrollbar for Chrome, Safari, and Opera */
+  .nft-list-container::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  
+  .nft-list-container::-webkit-scrollbar-thumb {
+    background: #333;
+  }
+  
+  .nft-list-container::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
+  
+  .nft-list-container::-webkit-scrollbar-track {
+    background: #ccc;
+  }
+  
+  .scroll-icon {
+    font-size: 2em;
+    cursor: pointer;
+    margin-left: 20px; /* Spacing between the container and the arrow */
+  }
+  
+  @media screen and (max-width: 600px) {
+    .nft-card {
+      width: 90%;
+      margin: 10px;
+    }
+  }
+  
+
+/* add click animation to copy button */
+
+.copy-button {
+  background: none;
+     color: #5c5c5c;
+    padding: 0px 10px;
+}
+
+.copy-button:hover {
+    background: none;
+}
+
+.copy-button:active > svg {
+    transform: translateY(2px);
+}
+
+.copy-image {
+  cursor: pointer;
+}
+
+.copy-image:active {
+    transform: translateY(2px);
+}
