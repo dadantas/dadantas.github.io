@@ -37,12 +37,8 @@ async function connectMetaMask() {
 }
 
 async function updateWalletsValues() {
-  let buttons = document.querySelectorAll("button");
   if (!window.ethereum) {
     console.error("MetaMask not found. Please install the MetaMask extension.");
-    buttons.forEach((button) => {
-      button.disabled = true;
-    });
     return;
   }
   let accounts = await window.ethereum.request({
@@ -50,15 +46,9 @@ async function updateWalletsValues() {
   });
   if (accounts.length == 0) {
     console.error("No accounts found");
-    buttons.forEach((button) => {
-      button.disabled = true;
-    });
     return;
   }
-  //get all buttons no matter class name
-  buttons.forEach((button) => {
-    button.disabled = false;
-  });
+
 
   let select = document.getElementById("wallet-select");
   select.innerHTML = "";
