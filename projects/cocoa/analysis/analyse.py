@@ -11,7 +11,7 @@ import time
 import pickle
 #from lib.ore_wrapper import getInitiatedParams, OreVal
 #from decryptor import decrypt_lineno
-from Preprocessor import preprocess_php
+from preprocessor import Preprocessor
 #perf counter to measure time more accurately
 from time import perf_counter
 from pyscript import when, display
@@ -28,7 +28,7 @@ def create_index(php_file, Kd_key=None, Kr_key=None, preprocess_flag=True):
     start_time = time.time()
     
     if preprocess_flag:
-        #TODO: neeed to retranslate back the lineno after vulnerability detection
+        #TODO: neeed to retranslate back the lineno after vuln
         input_data = Preprocessor().preprocess_php(input_data)
         end_time = time.perf_counter()
         display("---Preprocessor %s seconds ---" % (end_time - start_time))
