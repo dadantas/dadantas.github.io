@@ -25,7 +25,7 @@ def create_index(php_file, Kd_key=None, Kr_key=None, preprocess_flag=True):
     # source ==> lextoken stream
     input_data = php_file
     # --- Preprocessor ---
-    start_time = time.time()
+    start_time = time.perf_counter()
     
     if preprocess_flag:
         #TODO: neeed to retranslate back the lineno after vuln
