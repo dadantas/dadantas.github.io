@@ -75,39 +75,28 @@
                         </label>
                         
                         <label class="switch">
-                            <input type="checkbox" onchange="toggleDiv(this)" disabled="true" id="run-cloud">
+                            <input type="checkbox"  disabled="true" id="run-cloud">
                             <span class="slider round"></span>
                         </label>
                         
                     </div>
                     
                     
-                    <div class="tw-toggle" >
-                        <input type="radio" name="toggle-vuln" value="false">
-                        <label class="toggle toggle-yes">XSS</label> 
-                        <input checked type="radio" name="toggle-vuln" value="-1">
-                        <label class="toggle toggle-yes">Both</label> 
-                        <input type="radio" name="toggle-vuln" value="true">
-                        <label class="toggle toggle-yes">SQLi</label>
-                        <span></span>  
+                    <div class="switch-toggle switch-3 switch-candy">
+
+                        <input id="on" name="state-d" type="radio" checked="" value="false"/>
+                        <label for="on"  >XSS</label>
+                      
+                        <input id="na" name="state-d" type="radio" checked="checked" value="-1"/>
+                        <label for="na" class="disabled" >Both</label>
+                      
+                        <input id="off" name="state-d" type="radio" value="true"/>
+                        <label for="off" >SQLi</label>
+                      
                     </div>
-                    <div class="tw-toggle" id="toggleDiv" style="visibility: hidden;">
-                        <input type="radio" name="toggle" value="false">
-                        <label class="toggle toggle-yes">Tokenized</label> 
-                        <input checked type="radio" name="toggle" value="-1">
-                        <label class="toggle toggle-yes">Private</label> 
-                        <input type="radio" name="toggle" value="true" disabled>
-                        <label class="toggle toggle-yes">Extra private</label>
-                        <span></span>  
-                    </div>
+
                 </div>
-                <script>
-                    toggleDiv(document.getElementById('run-cloud'));
-                    function toggleDiv(checkbox) {
-                        const toggleDiv = document.getElementById('toggleDiv');
-                        toggleDiv.style.visibility = checkbox.checked ? 'visible' : 'hidden';
-                    }
-                </script>
+
                 <div class="upload-container">
                     
                     <label for="file-input" class="file-label">Choose File</label>
@@ -162,8 +151,9 @@
                     });
                     return lines;
                 }
-                function highlightLines(fileContent, paths, filename) {
+                function highlightLines(fileContent, paths, filename, line_offsets) {
                     paths = JSON.parse(paths);
+                    line_offsets = JSON.parse(line_offsets);
                     const codeDisplay = document.getElementById('code-display');
                     const linesArray = fileContent.split('\n');
                     let codeContainers = [];
@@ -178,7 +168,7 @@
                         path = removeDuplicateLines(path).reverse();
                         codeContainer.innerHTML += '<div class="file-name">'+filename+'</div>';
                         path.forEach((line) => {
-                            const lineNumber = line[1];
+                            const lineNumber = line_offsets[line[1]];
                             let highlightedContent = '<pre><code class="language-php">';
                             //highlightedContent += `Vulnerability Path ${pathIndex + 1}\n\n`;
                             for (let i = Math.max(lineNumber - 2, 0); i <= Math.min(lineNumber, linesArray.length - 1); i++) {
@@ -201,7 +191,7 @@
                     
                 }
 
-                function sendRequest(cip_code, fileContent, filename){
+                function sendRequest(cip_code, fileContent, filename, line_offsets){
                     jsobj = {
                         'index': cip_code.get('index'),
                         'input_tok': cip_code.get('input_tok'),
@@ -223,7 +213,7 @@
                     .then(data => {
                         console.log('Success:', data);
                         if (data.results) {
-                            highlightLines(fileContent, JSON.stringify(data.results), filename);
+                            highlightLines(fileContent, JSON.stringify(data.results), filename, line_offsets);
                         }
                     })
                     .catch((error) => {
@@ -300,29 +290,25 @@
                         #print number of lines
                         try:
                             #check if private or tokenized
-                            mode = document.querySelector('input[name="toggle"]:checked').value
+                            mode = document.querySelector('input[name="state-d"]:checked').value
                             cloud_run = document.getElementById('run-cloud').checked
+                            inputs = []
                             if mode == 'true':
+                                inputs = [("INPUT","SQLi_SENS","SQLi_SANS")]
                                 flag = cloud_run
                             elif mode == 'false':
+                                inputs = [("INPUT","XSS_SENS","XSS_SANS")]
                                 flag = False
                             else:
+                                inputs = [("INPUT","XSS_SENS","XSS_SANS")] + [("INPUT","SQLi_SENS","SQLi_SANS")]
                                 flag = cloud_run
                             Kd_key = generate_random_aes_key()
                             Kr_key = generate_random_aes_key()
-                            mode = document.querySelector('input[name="toggle-vuln"]:checked').value
-                            inputs = []
-                            if mode == 'false':
-                                inputs = [("INPUT","XSS_SENS","XSS_SANS")]
-                            elif mode == 'true':
-                                inputs = [("INPUT","SQLi_SENS","SQLi_SANS")]
-                            else:
-                                inputs = [("INPUT","XSS_SENS","XSS_SANS")] + [("INPUT","SQLi_SENS","SQLi_SANS")]
 
                             if flag:
-                                index = analyse.create_index(data, Kd_key, Kr_key)
+                                index, line_offsets = analyse.create_index(data, Kd_key, Kr_key)
                             else:
-                                index = analyse.create_index(data)
+                                index, line_offsets = analyse.create_index(data)
                             if cloud_run:
                                 prepare_data(index)
                             
@@ -340,7 +326,7 @@
                                     vd = VulnerabilityDetector(myobj['index'], Kd_key)
                                     
                                     results = vd.detection(myobj['input_tok'], myobj['sens_tok'], myobj['sans_tok'], myobj['init'] if 'init' in myobj else None)
-                                    highlightLines(str(data), str(json.dumps(results)), str(filename)) 
+                                    highlightLines(str(data), str(json.dumps(results)), str(filename), json.dumps(line_offsets)) 
                             else:
                                 for input, sens, sans in inputs:
                                     myobj = {'index': json.dumps(index.data) if cloud_run else index,
@@ -351,7 +337,7 @@
                                     if document.getElementById('run-cloud').checked and flag:
                                         myobj['init'] = encrypt(Kr_key, sens)
                                         myobj['det_key'] = Kd_key 
-                                    sendRequest(create_proxy(myobj), data, str(filename))
+                                    sendRequest(create_proxy(myobj), data, str(filename), json.dumps(line_offsets))
                         except Exception as e:
                             display(e)
 

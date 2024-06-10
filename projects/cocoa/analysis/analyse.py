@@ -16,7 +16,7 @@ from preprocessor import Preprocessor
 from time import perf_counter
 from pyscript import when, display
 
-def create_index(php_file, Kd_key=None, Kr_key=None, preprocess_flag=True):
+def create_index(php_file, Kd_key=None, Kr_key=None):
     #Kd_key = Random.new().read(AES.block_size)
     
     flag = Kd_key != None and Kr_key != None
@@ -26,12 +26,10 @@ def create_index(php_file, Kd_key=None, Kr_key=None, preprocess_flag=True):
     input_data = php_file
     # --- Preprocessor ---
     start_time = time.perf_counter()
-    
-    if preprocess_flag:
-        #TODO: neeed to retranslate back the lineno after vuln
-        input_data = Preprocessor().preprocess_php(input_data)
-        end_time = time.perf_counter()
-        display("---Preprocessor %s seconds ---" % (end_time - start_time))
+    preprocessor = Preprocessor()
+    input_data = preprocessor.preprocess_php(input_data)
+    end_time = time.perf_counter()
+    display("---Preprocessor %s seconds ---" % (end_time - start_time))
 
     # --- Lexer ---
     start_time = time.perf_counter()
@@ -71,7 +69,7 @@ def create_index(php_file, Kd_key=None, Kr_key=None, preprocess_flag=True):
     #if ore_params != None:
     #    results = decrypt_lineno(results, ore_params[0],100)
 
-    return data
+    return data, preprocessor.offset
 
  #wc -l
 
