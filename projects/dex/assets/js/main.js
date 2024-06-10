@@ -1,9 +1,9 @@
-import { nft_loan_template } from "./templates.js";
+import { loanTemplate } from "./templates.js";
 import {
   checkImage,
-  addButtonCopy,
-  addCopyListener,
   openDialog,
+  addButtonCopy,
+  copyToClipboard,
   closeDialogs,
 } from "./utils.js";
 const web3 = new Web3(window.ethereum);
@@ -115,14 +115,14 @@ async function listenToLoanCreation() {
       console.log("New loan created:", newLoan);
       await updateLoanCard(newLoan, newId);
       // find the new badge and make it visible
-      document.getElementById("nft-" + newId + "-badge").style.visibility = "visible";
+      document.getElementById("loan-" + newId + "-badge").style.visibility = "visible";
     }
   });
 }
 
 //create a div to display the loans
 async function updateLoanCard(loan, i) {
-  let old = document.getElementById("nft-" + i);
+  let old = document.getElementById("loan-" + i);
   if (old) {
     old.remove();
   }
@@ -131,40 +131,18 @@ async function updateLoanCard(loan, i) {
     return;
   }
   let payment = await defi_contract.methods.payments(i).call();
-  let template = nft_loan_template;
-  template = template.replaceAll("nft-x", "nft-" + i);
   let originalTokenURI = "";
-
+  let tokenURI = null;
   if (loan.isBasedNft) {
     //get the image of t    he nft
-    let tokenURI = await nft_contract.methods.tokenURI(loan.nftId).call();
+    tokenURI = await nft_contract.methods.tokenURI(loan.nftId).call();
     originalTokenURI = tokenURI;
     //check if it is ipfs or not
     if (tokenURI.startsWith("ipfs")) {
       tokenURI = "https://ipfs.io/ipfs/" + tokenURI.split("://")[1];
     }
-
-    template = template.replace("img_url", tokenURI);
-    template = template.replaceAll("nft_id", loan.nftId);
-  } else {
-    template = template.replace("img_url", "img/eth.png");
-    template = template.replaceAll("nft_id", loan.nftId);
   }
-  template = template.replaceAll("loan_id", i);
-  template = template.replace("0x899..", loan.borrower.substring(0, 5) + "..");
-  template = template.replace("0x000..", loan.lender.substring(0, 5) + "..");
-  //convert timestamp deadline to date up to seconds
-  let deadline = new Date(loan.deadline * 1000).toLocaleString();
-  deadline = deadline.substring(0, deadline.length - 3);
-  template = template.replace("dead_lines", deadline);
-  template = template.replace("due_amount", loan.amount);
-  template = template.replace("paid_amount", payment);
-  let paid = parseInt(payment);
-  let amount = parseInt(loan.amount);
-  let percent = (paid / amount) * 100;
-  template = template.replaceAll("_paid_offset", percent + "%");
-  template = template.replace("_unpaid_offset", 100 - percent + "%");
-
+  let template = loanTemplate(loan, payment, tokenURI);
   let cardList = document.getElementById("nftList");
   if (
     !loan.isBasedNft ||
@@ -174,46 +152,26 @@ async function updateLoanCard(loan, i) {
     //not a nft loan or a nft loan that has been borrowed
     cardList = document.getElementById("allLoans");
   }
+  console.log("Adding loan to card list:", template);
   //new ones are added to the top
   cardList.innerHTML = template + cardList.innerHTML;
-  if (!loan.isBasedNft) {
-    //remove the lend button
-    document.getElementById("nft-" + i + "-img").remove();
-    document.getElementById("nft-" + i + "-lend").remove();
-    document.getElementById("nft-" + i + "-id").remove();
-  } else {
-    if (loan.lender == "0x0000000000000000000000000000000000000000") {
-      document.getElementById("nft-" + i + "-percentage-paid").remove(); //hasn't been borrowed yet
-      document.getElementById("nft-" + i + "-paid-container").remove();
-      document.getElementById("nft-" + i + "-lender").remove();
-    } else {
-      document.getElementById("nft-" + i + "-lend").remove();
-    }
-    let image = document.getElementById("nft-" + i + "-img");
-    addCopyListener(image, originalTokenURI);
+  if (loan.isBasedNft) {
+    let image = document.getElementById("loan-" + i + "-img");
     checkImage(image);
   }
 
   //place copy addresses buttons
-  let parent = document.getElementById("nft-" + i + "-borrower");
+  let parent = document.getElementById("loan-" + i + "-borrower");
   addButtonCopy(parent, loan.borrower);
-  let lender = document.getElementById("nft-" + i + "-lender");
+  let lender = document.getElementById("loan-" + i + "-lender");
   if (lender) {
     addButtonCopy(lender, loan.lender);
   }
   if (loan.amount == "0") {
-    document.getElementById("nft-" + i + "-amount").parentElement.innerHTML =
+    document.getElementById("loan-" + i + "-amount").parentElement.innerHTML =
       "Paid back";
   }
-  //#4CAF50
-  //check if past deadline
-  if (new Date(loan.deadline * 1000) < new Date() || amount <= paid) {
-    if (paid < amount) {
-      document.getElementById("nft-" + i).style.border = "2px solid red";
-    } else {
-      document.getElementById("nft-" + i).style.border = "2px solid #4CAF50";
-    }
-  }
+
 }
 
 async function checkLoans() {
@@ -242,7 +200,7 @@ async function checkLoans() {
       let currentPaid = payment;
       if (loan.lender != "0x0000000000000000000000000000000000000000") {
         currentPaid = parseInt(
-          document.getElementById("nft-" + loan.id + "-paid").textContent
+          document.getElementById("loan-" + loan.id + "-paid").textContent
         );
         unpaid_Total += amount - payment;
         total_borrowed += amount;
@@ -254,7 +212,7 @@ async function checkLoans() {
       ) {
         let overdue = false;
         if (amount == payment) {
-          document.getElementById("nft-" + loan.id).style.border =
+          document.getElementById("loan-" + loan.id).style.border =
             "2px solid #4CAF50";
         } else if (
           new Date(loan.deadline * 1000) < new Date() &&
@@ -263,12 +221,12 @@ async function checkLoans() {
           //select the badge and make it visible
           overdue = true;
 
-          document.getElementById("nft-" + loan.id).style.border =
+          document.getElementById("loan-" + loan.id).style.border =
             "2px solid red";
         }
         updateLoanCard(loan, loan.id).then(() => {
           if (overdue) {
-            let badge = document.getElementById("nft-" + loan.id + "-badge");
+            let badge = document.getElementById("loan-" + loan.id + "-badge");
             badge.style.visibility = "visible";
             badge.textContent = "Expired";
             badge.style.backgroundColor = "grey";
@@ -438,7 +396,7 @@ async function cancelLoanRequestByNft() {
     });
   let loan = loans.find((loan) => loan.nftId == nftId);
   if (loan) {
-    document.getElementById("nft-" + loan.id).remove();
+    document.getElementById("loan-" + loan.id).remove();
   }
   closeDialogs();
 }
@@ -453,7 +411,7 @@ async function loanByNft(nftId) {
 }
 function clearExpiredLoans() {
   expired.forEach((loan) => {
-    document.getElementById("nft-" + loan.id).remove();
+    document.getElementById("loan-" + loan.id).remove();
   });
   expired = [];
 }
@@ -473,7 +431,7 @@ window.listenToLoanCreation = listenToLoanCreation;
 window.checkLoans = checkLoans;
 window.openDialog = openDialog;
 window.clearExpiredLoans = clearExpiredLoans;
-
+window.copyToClipboard = copyToClipboard;
 updateWalletsValues();
 updateValues();
 async function updateValues() {

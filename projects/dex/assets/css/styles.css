@@ -81,12 +81,12 @@ body {
     color: #666;
   }
 
-  #nft-list {
+  #loan-list {
     list-style-type: none;
     padding: 0;
   }
 
-  #nft-list li {
+  #loan-list li {
     background-color: #f9f9f9;
     margin: 5px 0;
     padding: 10px;
