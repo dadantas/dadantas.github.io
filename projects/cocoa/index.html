@@ -69,14 +69,18 @@
                 <div class="options">
                     <div style="display: flex; align-items: center; width: 300px;">
                         <!-- Rounded switch -->
-                        <label for="run-cloud" style="margin-right: 5px;">Run in the cloud</label>
-    
+                        <label for="run-cloud" style="margin-right: 5px;">
+                            Run in the cloud
+                            (disabled for now)
+                        </label>
+                        
                         <label class="switch">
-                            <input type="checkbox" onchange="toggleDiv(this)" id="run-cloud">
+                            <input type="checkbox" onchange="toggleDiv(this)" disabled="true" id="run-cloud">
                             <span class="slider round"></span>
                         </label>
+                        
                     </div>
-
+                    
                     
                     <div class="tw-toggle" >
                         <input type="radio" name="toggle-vuln" value="false">
