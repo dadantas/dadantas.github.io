@@ -231,6 +231,8 @@
                 import secrets
 
                 analysed = []
+                toBeAnalysed = {}
+
                 def generate_random_aes_key(key_size=32):
                     if not isinstance(key_size, int) or key_size <= 0:
                         raise ValueError("key_size must be a positive integer")
@@ -248,18 +250,39 @@
                                 continue    
                             if type(data.data[k][i]) == MyValue or type(data.data[k][i]) == MyEncryptedValue:
                                 data.data[k][i] = data.data[k][i]._serialize()
-                    
+                
+                
+                async def handle_removeFile(event):
+                    fileId = event.target.id
+                    filename = fileId.split('-')[1]
+                    document.getElementById('dropArea').removeChild(document.getElementById(fileId).parentNode)
+                    del toBeAnalysed[filename]
+                
+                
                 @when('fileAdded', '#code-display')
                 async def handle_fileAdded(event):
-                    await handle_analysis(event.detail.files, event.detail.text)
-                
-                
-                async def handle_analysis(fileList, filename):
+                    fileList = event.detail.files
                     for f in fileList:
+                        filename = f.name
+                        if filename in toBeAnalysed:
+                            continue
+                        toBeAnalysed[filename] = f
+                        #create div for file
+                        fileDiv = document.createElement('div')
+                        fileDiv.className = 'file'
+                        fileDiv.innerHTML = f'<span>{filename}</span><button style="margin-left: 5px;" class="remove-file" id="file-{filename}" py-click="handle_removeFile"><i class="fa fa-trash"></i></button>'    
+                        #add it to drop area
+                        if document.getElementById('dropArea').innerHTML == 'Drag and drop files here':
+                            document.getElementById('dropArea').innerHTML = ''
+                        document.getElementById('dropArea').appendChild(fileDiv)
+                
+                @when('click', '#upload-btn')
+                async def handle_upload(event):
+                    document.getElementById('dropArea').innerHTML = 'Drag and drop files here'
+                    for filename, v in toBeAnalysed.items():
                         if filename in analysed:
                             continue
-                        analysed.append(filename)
-                        data = await f.text()
+                        data = await v.text()
                         #print number of lines
                         try:
                             #check if private or tokenized
@@ -317,6 +340,9 @@
                                     sendRequest(create_proxy(myobj), data, str(filename))
                         except Exception as e:
                             display(e)
+
+                    
+                        
             </script>
         </section>
     </body>
